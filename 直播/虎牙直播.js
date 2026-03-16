@@ -1,4 +1,11 @@
 // @name 虎牙直播
+// @author 
+// @description 
+// @dependencies: axios, crypto
+// @version 1.0.0
+// @downloadURL https://gh-proxy.org/https://github.com/Silent1566/OmniBox-Spider/raw/refs/heads/main/直播/虎牙直播.js
+
+
 /**
  * ============================================================================
  * 虎牙直播 - OmniBox 爬虫脚本（基于斗鱼模板重构）
