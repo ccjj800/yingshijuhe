@@ -2,7 +2,7 @@
 // @author 梦
 // @description 刮削：未接入，弹幕：未接入，嗅探：不需要（直链优先，支持网盘线路展开）
 // @dependencies
-// @version 1.3.0
+// @version 1.3.1
 // @downloadURL https://gh-proxy.org/https://github.com/Silent1566/OmniBox-Spider/raw/refs/heads/openclaw/影视/采集/LIBVIO.js
 
 const http = require("http");
@@ -450,14 +450,27 @@ function decodeCombinedPlayId(playId = "") {
     return { main, meta: decodePlayId(metaB64 || "") };
 }
 
-function expandPanSourcesWithRoutes(playSources = []) {
+function expandPanSourcesWithRoutes(playSources = [], from = "web") {
     const result = [];
     for (const source of playSources) {
         const driveType = inferDriveTypeFromSourceName(source?.name || "");
-        if (DRIVE_TYPE_CONFIG.length > 0 && driveType && !DRIVE_TYPE_CONFIG.includes(driveType)) {
+        const shouldExpandRoutes = DRIVE_TYPE_CONFIG.length === 0 || !driveType || DRIVE_TYPE_CONFIG.includes(driveType);
+
+        if (!shouldExpandRoutes) {
+            result.push(source);
             continue;
         }
-        for (const routeName of SOURCE_NAMES_CONFIG) {
+
+        let routeNames = [...SOURCE_NAMES_CONFIG];
+        if (from === "web") {
+            routeNames = routeNames.filter((name) => name !== "本地代理");
+        }
+        if (!routeNames.length) {
+            result.push(source);
+            continue;
+        }
+
+        for (const routeName of routeNames) {
             result.push({
                 name: `${source.name}-${routeName}`,
                 episodes: (source.episodes || []).map((ep) => {
@@ -620,7 +633,7 @@ async function detail(params, context) {
         }
 
         const sortedNetdiskSources = sortPlaySourcesByDriveOrder(netdiskSources);
-        const expandedNetdiskSources = expandPanSourcesWithRoutes(sortedNetdiskSources);
+        const expandedNetdiskSources = expandPanSourcesWithRoutes(sortedNetdiskSources, context?.from || "web");
         const vod_play_sources = [...collectSources, ...expandedNetdiskSources];
 
         logInfo("detail 完成", { videoId, sourceCount: vod_play_sources.length, episodeCount: vod_play_sources.reduce((n, item) => n + item.episodes.length, 0) });
